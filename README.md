@@ -80,5 +80,12 @@ This tool is open-source and available under the MIT License. Feel free to use a
 
 ---
 
+## 🧠 Credits
+
+- Developed by [montero75hz].
+- Powered by [discord.py](https://discordpy.readthedocs.io/).
+
+---
+
 *Search smarter, open links faster—all from your terminal.*
 
