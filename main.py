@@ -3,6 +3,18 @@ import webbrowser
 from googlesearch import search as google_search
 from duckduckgo_search import DDGS
 import re
+from colorama import Fore, Style, init
+init(autoreset=True)
+
+print(Fore.RED + r"""
+
+██╗     ██╗███╗   ██╗██╗  ██╗    ███████╗███████╗███████╗██╗  ██╗███████╗██████╗ 
+██║     ██║████╗  ██║██║ ██╔╝    ██╔════╝██╔════╝██╔════╝██║ ██╔╝██╔════╝██╔══██╗
+██║     ██║██╔██╗ ██║█████╔╝     ███████╗█████╗  █████╗  █████╔╝ █████╗  ██████╔╝
+██║     ██║██║╚██╗██║██╔═██╗     ╚════██║██╔══╝  ██╔══╝  ██╔═██╗ ██╔══╝  ██╔══██╗
+███████╗██║██║ ╚████║██║  ██╗    ███████║███████╗███████╗██║  ██╗███████╗██║  ██║
+╚══════╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝    ╚══════╝╚══════╝╚══════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝     
+---------------------------------------------------------------------------------""")
 
 def save_results(filename, results):
     """Save the results to a text file"""
@@ -11,25 +23,33 @@ def save_results(filename, results):
             file.write(f"{i}. {result}\n")
     print(f"\n📁 Results saved to file: {filename}")
 
-def internet_search(query, engine="google", num_results=100):
+def internet_search(query, engine="google", num_results=10):
     """Search the query using the specified engine"""
     results = []
+
+    # Print search message temporarily
+    print(f"🔍 Searching for '{query}' using {engine.capitalize()} ...", end="\r")
+
     if engine == "google":
-        print(f"\n🔍 Searching for '{query}' using Google ...")
-        results = list(google_search(query, num_results=num_results, lang="en"))
+        for i, result in enumerate(google_search(query, num_results=num_results, lang="en"), 1):
+            if i == 1:
+                print(" " * 80, end="\r")  # Clear the "Searching..." message
+            print(f"{i}. {result}")
+            results.append(result)
+
     elif engine == "duckduckgo":
-        print(f"\n🔍 Searching for '{query}' using DuckDuckGo ...")
         with DDGS() as ddgs:
-            ddg_results = ddgs.text(query, max_results=num_results)
-            results = [r['href'] for r in ddg_results if 'href' in r]
+            for i, r in enumerate(ddgs.text(query, max_results=num_results), 1):
+                if 'href' in r:
+                    if i == 1:
+                        print(" " * 80, end="\r")  # Clear the "Searching..." message
+                    print(f"{i}. {r['href']}")
+                    results.append(r['href'])
+
     else:
         print("❌ Unsupported search engine.")
         return
 
-    # Print and save the results
-    for i, result in enumerate(results, 1):
-        print(f"{i}. {result}")
-    
     # Save results to file
     safe_query = query.strip().replace(" ", "_")
     filename = f"{safe_query}-{engine}.txt"
@@ -49,8 +69,7 @@ def correct_and_open_urls():
             if url.lower() == 'done':
                 break
             if url:
-                # Correcting the URL format if it contains extra characters
-                corrected_url = re.sub(r"^\d+\.\s*(https?://)", r"\1", url)  # Remove the number prefix
+                corrected_url = re.sub(r"^\d+\.\s*(https?://)", r"\1", url)
                 corrected_url = corrected_url.strip()
                 if corrected_url.startswith("https://") or corrected_url.startswith("http://"):
                     urls.append(corrected_url)
@@ -62,7 +81,6 @@ def correct_and_open_urls():
         for url in urls:
             webbrowser.open_new_tab(url)
 
-        # Save the URLs to a file
         save_results("manual_urls.txt", urls)
 
     except ValueError:
@@ -79,12 +97,16 @@ def main():
 
             choice = input("Enter your choice (1, 2, or 3): ").strip()
 
-            if choice == "1":
+            if choice in ("1", "2"):
                 query = input("🔎 Enter the search keyword: ").strip()
-                internet_search(query, "google")
-            elif choice == "2":
-                query = input("🔎 Enter the search keyword: ").strip()
-                internet_search(query, "duckduckgo")
+                while True:
+                    try:
+                        num = int(input("🔢 How many links do you want? "))
+                        break
+                    except ValueError:
+                        print("❗ Please enter a valid number.")
+                engine = "google" if choice == "1" else "duckduckgo"
+                internet_search(query, engine, num_results=num)
             elif choice == "3":
                 correct_and_open_urls()
             else:
